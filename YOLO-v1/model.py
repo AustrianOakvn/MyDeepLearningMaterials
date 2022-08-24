@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 
 # Format explain Tuple: (kernel_size, num_filters, stride, padding)
