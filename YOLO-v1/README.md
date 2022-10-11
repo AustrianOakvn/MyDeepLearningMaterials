@@ -33,13 +33,19 @@ For every cell:
 ![image info](./imgs/yolo_architecture.png)
 
 Reminder formula to calculate the output of convolutional and max pooling layer:
-$Output-size = floor([(W-K+2P)/S])+1$
+$Output\ size = floor([(W-K+2P)/S])+1$
 
 - $W$ is the input size
 - $K$ is the kernel size
 - $P$ is the padding
 - $S$ is the stride
 
+Formula from Pytorch:
+$ Output\ size = floor([W+2P-D*(K-1)+1]/S)+1$
+
+- $D$ is the dilation
+
+**Notice**: if dialtion=0 then the pytorch formula is equal to the general formula. 
 Input image --> resize (448, 448, 3)
 24 Layers to extract features:
 
