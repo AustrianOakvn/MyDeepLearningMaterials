@@ -26,7 +26,6 @@ def create_vgg():
         # Lớp max pooling thứ 5
     pool5 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
     # Why padding = 6 and dilation = 6
-    # Đi qua conv6 kích thước k còn là 19x19 ?
     conv6 = nn.Conv2d(in_channels =512, out_channels=1024, kernel_size=3, padding=6, dilation=6)
     conv7 = nn.Conv2d(1024, 1024, kernel_size=1)
 

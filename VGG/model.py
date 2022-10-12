@@ -30,6 +30,8 @@ class CNNBlock(nn.Module):
     def forward(self, x):
         return self.leakyrelu(self.batchnorm(self.conv(x)))
 
+
+
 class VGG(nn.Module):
     def __init__(self, architecture_config, in_channels=3, out_features=10, **kwargs):
         super(VGG, self).__init__()
