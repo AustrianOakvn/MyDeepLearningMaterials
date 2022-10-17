@@ -44,7 +44,9 @@ class DefaultBox():
                     defbox_list += [cx, cy, s_k*sqrt(ar), s_k/sqrt(ar)]
                     defbox_list += [cx, cy, s_k/sqrt(ar), s_k*sqrt(ar)]
         
+        # Reshape tensor to (8732, 4)
         output = torch.Tensor(defbox_list).view(-1, 4)
+        # Limit the default box to be in range 0, 1 because some default box at top position may lay outside
         output.clamp_(max=1, min=0)
         return output
 
