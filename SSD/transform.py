@@ -62,12 +62,16 @@ if __name__ == "__main__":
 
     phase = "train"
     img_transformed, boxes, labels = transformation(img, phase, anno_info_list[:, :4], anno_info_list[:, 4])
-    plt.imshow(cv2.cvtColor(img_transformed, cv2.COLOR_BGR2RGB))
-    plt.show()
+    # plt.imshow(cv2.cvtColor(img_transformed, cv2.COLOR_BGR2RGB))
+    # plt.show()
+    print(img_transformed.max())
+    print(img_transformed)
+    print(boxes)
+    print(labels)
 
     phase = "val"
     img_transformed, boxes, labels = transformation(img, phase, anno_info_list[:, :4], anno_info_list[:, 4])
-    plt.imshow(cv2.cvtColor(img_transformed, cv2.COLOR_BGR2RGB))
-    plt.show()
+    # plt.imshow(cv2.cvtColor(img_transformed, cv2.COLOR_BGR2RGB))
+    # plt.show()
 
 

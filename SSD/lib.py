@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 import torch.utils.data as data
 import torch
 import torch.nn as nn
+from torch.autograd import Function
 import numpy as np
 
 torch.manual_seed(1234)

@@ -125,6 +125,8 @@ class SSD(nn.Module):
         if phase == "inference":
             self.detect = Detect()
 
+
+
 def decode(loc, def_box_list):
     '''Get bounding box from the default box 
     and the offset from the loc layer of the model
@@ -186,12 +188,14 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
         # New idx without the last element
         idx = idx[:-1]
 
+        # Get all the coordinate with index in idx tensor and place them in tmp value
         torch.index_select(x1, 0, idx, out=tmp_x1)
         torch.index_select(y1, 0, idx, out=tmp_y1)
         torch.index_select(x2, 0, idx, out=tmp_x2)
         torch.index_select(y2, 0, idx, out=tmp_y2)
 
         # Take the x_min of the overlap
+        # Clamp the value to get the x1, y1, x2, y2 of the overlapped area
         tmp_x1 = torch.clamp(tmp_x1, min=x1[i]) # = x1[i] if tmp_x1 < x1[i]
         tmp_y1 = torch.clamp(tmp_y1, min=y1[i])
         tmp_x2 = torch.clamp(tmp_x1, max=x2[i])
@@ -201,13 +205,14 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
         tmp_w.resize_as_(tmp_x2)
         tmp_h.resize_as_(tmp_y2)
 
+        # Calculate the width and height of overlaaped boxes
         tmp_w = tmp_x2 - tmp_x1
         tmp_h = tmp_y2 - tmp_y1
 
         tmp_w = torch.clamp(tmp_w, min=0.0)
         tmp_h = torch.clamp(tmp_h, min=0.0)
 
-        # overlap area
+        # overlapped area
         inter = tmp_w * tmp_h
         others_area = torch.index_select(area, 0, idx)
         union = area[i] + others_area - inter
@@ -220,6 +225,44 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
 
     return keep, count
 
+
+class Detect(Function):
+    '''Function has auto forward function'''
+
+    def __init__(self, conf_thresh=0.01, top_k=200, nms_thresh=0.45, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Why dim = -1
+        self.softmax = nn.Softmax(dim=-1)
+        self.conf_thresh = conf_thresh
+        self.top_k = top_k
+        self.nms_thresh = nms_thresh
+
+    def forward(self, loc_data, conf_data, dbox_list):
+        num_batch = loc_data.size(0)
+        num_dbox = loc_data.size(1) # 8732 boxes
+        num_classes = conf_data.size(2) # 21 classes
+
+        # Convert to probability using softmax
+        conf_data = self.softmax(conf_data) 
+        # Format (batch_num, num_box, num_class) -> (batch_num, num_class, num_dbox)
+        conf_predict = conf_data.transpose(2, 1)
+
+        # Process each image in one batch
+        for i in range(num_batch):
+            # Calculate bbox from offset and default boxes
+            decode_boxes = decode(loc_data[i], dbox_list)
+            # Copy confidence score of image i-th
+            conf_scores = conf_predict[i].clone()
+
+            for cl in range(1, num_classes):
+                c_mask = conf_predict[cl].gt(self.conf_thresh) # only take confidence > 0.01
+                scores = conf_predict[cl][c_mask]
+
+                if scores.numel() == 0:
+                    continue
+                
+                # convert back to the dimension of decode_box
+                l_mask = c_mask.unsqueeze(1).expand_as(decode_boxes)
 
 
 

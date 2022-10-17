@@ -35,6 +35,8 @@ class CNNBlock(nn.Module):
     def forward(self, x):
         return self.leakyrelu(self.batchnorm(self.conv(x)))
 
+
+
 class Yolov1(nn.Module):
     def __init__(self, in_channels=3, **kwargs):
         super(Yolov1, self).__init__()
@@ -43,11 +45,13 @@ class Yolov1(nn.Module):
         self.darknet = self._create_conv_layers(self.architecture)
         self.fcs = self._create_fcs(**kwargs)
 
+
     def forward(self, x):
         x = CNNBlock(3, 64, kernel_size = 7, stride=2, padding=3).forward(x)
         print(x.shape)
         x = self.darknet(x)
         return print(self.fcs(torch.flatten(x, start_dim=1)))
+
 
     def _create_conv_layers(self, architecture):
         layers = []
@@ -96,17 +100,26 @@ class Yolov1(nn.Module):
         S, B, C = split_size, num_boxes, num_classes
         return nn.Sequential(
                 nn.Flatten(),
-                nn.Linear(1024*S*S, 496),
+                nn.Linear(1024*S*S, 4096),
                 nn.Dropout(0.5),
                 nn.LeakyReLU(0.1),
-                nn.Linear(496, S*S*(C+B*5)), # (S, S, 30) where C+B*5=30
+                nn.Linear(4096, S*S*(C+B*5)), # (S, S, 30) where C+B*5=30
                 )
 
 
-def test(S=7, B=2, C=20):
-    model = Yolov1(split_size=S, num_boxes=B, num_classes=C)
-    x = torch.randn((2, 3, 448, 448))
-    print(model(x).shape)
 
-test()
+
+def test(S=7, B=2, C=20):
+    # model = Yolov1(split_size=S, num_boxes=B, num_classes=C)
+    # x = torch.randn((2, 3, 448, 448))
+    # print(model(x).shape)
+    fl_layers = nn.Flatten(start_dim=1, end_dim=-1)
+    x = torch.randn((2, 7, 7, 1024))
+    # print(model)
+    print(fl_layers(x).shape)
+    print(fl_layers._parameters)
+
+
+if __name__ == "__main__":
+    test()
 
