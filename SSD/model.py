@@ -107,24 +107,6 @@ def create_loc_conf(num_classes=21, bbox_ratio_num=[4, 6, 6, 6, 4, 4]):
     return nn.ModuleList(loc_layers), nn.ModuleList(conf_layers)
 
 
-class SSD(nn.Module):
-    def __init__(self, phase, cfg) -> None:
-        super(SSD, self).__init__()
-        self.phase = phase
-        self.num_classes = cfg["num_classes"]
-        # create main modules
-
-        self.vgg = create_vgg()
-        self.extras = create_extras()
-        self.loc, self.conf = create_loc_conf(cfg["num_classes"], cfg["bbox_aspect_num"])
-        self.L2_norm = L2Norm()
-
-        self.dbox = DefaultBox(cfg)
-        self.dbox_list = self.dbox.create_defbox()
-
-        if phase == "inference":
-            self.detect = Detect()
-
 
 
 def decode(loc, def_box_list):
@@ -225,7 +207,6 @@ def nms(boxes, scores, overlap=0.45, top_k=200):
 
     return keep, count
 
-
 class Detect(Function):
     '''Function has auto forward function'''
 
@@ -247,6 +228,8 @@ class Detect(Function):
         # Format (batch_num, num_box, num_class) -> (batch_num, num_class, num_dbox)
         conf_predict = conf_data.transpose(2, 1)
 
+        output = torch.zero(num_batch, num_classes, self.top_k, 5)
+
         # Process each image in one batch
         for i in range(num_batch):
             # Calculate bbox from offset and default boxes
@@ -263,6 +246,82 @@ class Detect(Function):
                 
                 # convert back to the dimension of decode_box
                 l_mask = c_mask.unsqueeze(1).expand_as(decode_boxes)
+
+                boxes = decode_boxes[l_mask].view(-1, 4)
+
+                ids, count = nms(boxes, scores, overlap=self.nms_thresh, top_k=self.top_k)
+
+                output[i, cl, :count] = torch.cat((scores[ids[:count]].unsqueeze(1), boxes[ids[:count]]), 1)
+        
+        return output
+
+
+class SSD(nn.Module):
+    def __init__(self, phase, cfg) -> None:
+        super(SSD, self).__init__()
+        self.phase = phase
+        self.num_classes = cfg["num_classes"]
+        # create main modules
+
+        self.vgg = create_vgg()
+        self.extras = create_extras()
+        self.loc, self.conf = create_loc_conf(cfg["num_classes"], cfg["bbox_aspect_num"])
+        self.L2_norm = L2Norm()
+
+        self.dbox = DefaultBox(cfg)
+        self.dbox_list = self.dbox.create_defbox()
+
+        if phase == "inference":
+            self.detect = Detect()
+
+    def forward(self, x):
+        sources = list()
+        loc = list()
+        conf = []
+
+        for k in range(23):
+            x = self.vgg[k](x)
+
+        source1 = self.L2_norm(x)
+        sources.append(source1)
+
+        for k in range(23, len(self.vgg)):
+            x = self.vgg[k](x)
+
+        # source 2
+        sources.append(x)
+
+        for k, v in enumerate(self.extras):
+            # First layers
+            x = nn.ReLU(v(x), inplace=True)
+
+            if k %2 == 1:
+                sources.append(x)
+        
+        for (x, l, c) in zip(sources, self.loc, self.conf):
+            # Forward x to location
+            # x format (batch_size, aspect_ratio_num, featuremap_height, featuremap_width)
+            # -> (batch_size, featuremap_height, featuremap_width, aspect_ratio_num)
+            # Contiguous to arrage tensor sequentially in memory
+            loc.append(l(x).permute(0, 2, 3, 1).contiguous())
+            conf.append(c(x).permute(0, 2, 3, 1).contiguous())
+
+        # Flaten the tensors
+        loc = torch.cat([o.view(o.size(0), -1) for o in loc], 1) # (batch_size, 34928) 
+        conf = torch.cat([o.view(o.size(0), -1) for o in conf], 1)
+
+        loc = loc.view(loc.size(0), -1, 4) # (batch_size, 8732, 4)
+        conf = conf.view(conf.size(0), -1, self.num_classes)
+
+
+        output = (loc, conf, self.dbox_list)
+
+        if self.phase == "inference":
+            return self.detect(output)
+
+        return output
+
+         
 
 
 
