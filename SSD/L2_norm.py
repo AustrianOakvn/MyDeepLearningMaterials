@@ -22,6 +22,6 @@ class L2Norm(nn.Module):
         x = torch.divide(x, norm)
         # weight size (512) -> x_size
         # unsqueeze would screate a new dimension
-        weights = self.weight.unsqueeze[0].unsqueeze[2].unsqueeze[3].expand_as(x) # (1, 512, 1, 1) -> x_size
+        weights = self.weight.unsqueeze(0).unsqueeze(2).unsqueeze(3).expand_as(x) # (1, 512, 1, 1) -> x_size
 
         return weights*x

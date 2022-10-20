@@ -293,7 +293,7 @@ class SSD(nn.Module):
 
         for k, v in enumerate(self.extras):
             # First layers
-            x = nn.ReLU(v(x), inplace=True)
+            x = F.relu(v(x), inplace=True)
 
             if k %2 == 1:
                 sources.append(x)
