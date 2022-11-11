@@ -79,3 +79,7 @@ class MultiBoxLoss(nn.Module):
         loss_conf = loss_conf/N 
 
         return loss_loc, loss_conf
+
+
+if __name__ == "__mainn__":
+    

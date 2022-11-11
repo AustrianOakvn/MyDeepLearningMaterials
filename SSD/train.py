@@ -159,5 +159,10 @@ def train_model(net, dataloader_dict, criterion, optimizer, num_epochs):
 
 
 
-num_epoch = 30
-train_model(model, dataloader_dict, criterion, optimizer, num_epoch)
+
+
+if __name__ == "__main__":
+    # test = np.random.rand(3, 4)
+    # np.savez_compressed("SSD/weights/test_path.npz", test)
+    num_epoch = 30
+    train_model(model, dataloader_dict, criterion, optimizer, num_epoch)

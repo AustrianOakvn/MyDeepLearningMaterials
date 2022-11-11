@@ -228,7 +228,7 @@ class Detect(Function):
         # Format (batch_num, num_box, num_class) -> (batch_num, num_class, num_dbox)
         conf_predict = conf_data.transpose(2, 1)
 
-        output = torch.zero(num_batch, num_classes, self.top_k, 5)
+        output = torch.zeros(num_batch, num_classes, self.top_k, 5)
 
         # Process each image in one batch
         for i in range(num_batch):
@@ -238,8 +238,8 @@ class Detect(Function):
             conf_scores = conf_predict[i].clone()
 
             for cl in range(1, num_classes):
-                c_mask = conf_predict[cl].gt(self.conf_thresh) # only take confidence > 0.01
-                scores = conf_predict[cl][c_mask]
+                c_mask = conf_scores[cl].gt(self.conf_thresh) # only take confidence > 0.01
+                scores = conf_scores[cl][c_mask]
 
                 if scores.numel() == 0:
                     continue
@@ -323,6 +323,15 @@ class SSD(nn.Module):
 
          
 
+def test_detect():
+    loc_data = torch.rand((1, 8732, 4))
+    conf_data = torch.rand((1, 8732, 21))
+    detect = Detect()
+    dbox = DefaultBox(cfg)
+    dbox_list = dbox.create_defbox()
+    output = detect.forward(loc_data, conf_data, dbox_list)
+
+    print(output.shape)
 
 
 
@@ -340,5 +349,6 @@ if __name__ == "__main__":
     # print(test_layer(x).shape)
     # print(vgg(x).shape)
 
-    ssd = SSD(phase="train", cfg=cfg)
-    print(ssd)
+    # ssd = SSD(phase="train", cfg=cfg)
+    # print(ssd)
+    test_detect()

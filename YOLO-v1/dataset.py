@@ -88,3 +88,6 @@ class VOCDataset(torch.utils.data.Dataset):
                 label_matrix[i, j, class_label] = 1
 
         return image, label_matrix
+
+
+# https://meet.google.com/skd-oeou-jgf

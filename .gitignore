@@ -163,3 +163,5 @@ cython_debug/
 
 hymenoptera_data
 vgg16_reducedfc.pth
+
+weights

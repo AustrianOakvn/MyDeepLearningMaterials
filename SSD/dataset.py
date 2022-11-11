@@ -101,5 +101,6 @@ if __name__ == "__main__":
     images, targets = next(batch_iter) # get 1 sample
     print(images.size())
     print(len(targets))
+    print(targets[0])
     print(targets[0].size())
 
